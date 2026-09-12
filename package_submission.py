@@ -9,6 +9,7 @@ os.makedirs(dest_dir, exist_ok=True)
 
 # Files to package into code.zip
 files_to_zip = [
+    ("main.py", "main.py"),
     ("solve.py", "solve.py"),
     ("simulator.py", "simulator.py"),
     ("README.md", "README.md"),
