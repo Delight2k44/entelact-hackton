@@ -23,6 +23,14 @@ class PhotospheriaSimulator:
             if cmd.get("type") == "season":
                 self.seasons_by_tick[cmd["tick"]] = cmd["season"]
 
+        # Load unlock conditions if available
+        self.unlock_conditions = []
+        try:
+            with open("data/plant_unlock_conditions.json", "r") as f:
+                self.unlock_conditions = json.load(f)
+        except Exception:
+            pass
+
         self.reset()
 
     def reset(self):
@@ -49,6 +57,8 @@ class PhotospheriaSimulator:
 
         self.current_tick = 0
         self.current_season = "Spring"
+        self.unlocked_plants = {"Grass", "Rose Bush", "Lavender", "Dwarf Sunflower", "Oak Tree"}
+        self.events_history = set()
 
     def get_neighbors(self, r, c, spread_type, spread_range):
         neighbors = []
@@ -89,6 +99,78 @@ class PhotospheriaSimulator:
                         neighbors.append((nr, nc))
         return neighbors
 
+    def eval_unlock_node(self, node, plant_counts, feature_counts):
+        op = node.get("op")
+        if op == "AND":
+            return all(self.eval_unlock_node(c, plant_counts, feature_counts) for c in node["children"])
+        elif op == "OR":
+            return any(self.eval_unlock_node(c, plant_counts, feature_counts) for c in node["children"])
+        elif op == "NOT":
+            return not self.eval_unlock_node(node["child"], plant_counts, feature_counts)
+
+        ctype = node.get("type")
+        if ctype == "species_present":
+            # Animals are disabled in Level 1 (animals_enabled: false)
+            if not self.level_data.get("animals_enabled", False):
+                return False
+            # If enabled in future levels, check animals presence here
+            return False
+        elif ctype == "species_absent":
+            if not self.level_data.get("animals_enabled", False):
+                return True
+            return True
+        elif ctype == "event":
+            return node.get("event") in self.events_history
+        elif ctype == "coverage":
+            p = node.get("plant")
+            curr_count = plant_counts.get(p, 0)
+            cov = curr_count / self.c_max
+            op_str = node.get("operator", ">=")
+            val = node.get("value", 0.0)
+            if op_str == ">": return cov > val
+            if op_str == ">=": return cov >= val
+            if op_str == "<": return cov < val
+            if op_str == "<=": return cov <= val
+            if op_str == "==": return math.isclose(cov, val)
+        elif ctype == "count":
+            p = node.get("plant")
+            curr_count = plant_counts.get(p, 0)
+            op_str = node.get("operator", ">=")
+            val = node.get("value", 0)
+            if op_str == ">": return curr_count > val
+            if op_str == ">=": return curr_count >= val
+            if op_str == "<": return curr_count < val
+            if op_str == "<=": return curr_count <= val
+            if op_str == "==": return curr_count == val
+        elif ctype == "feature_count":
+            feat = node.get("feature")
+            curr_feat = feature_counts.get(feat, 0)
+            val = node.get("value", 0)
+            op_str = node.get("operator", ">=")
+            if op_str == ">": return curr_feat > val
+            if op_str == ">=": return curr_feat >= val
+        return False
+
+    def update_unlocks(self):
+        plant_counts = {}
+        feature_counts = {"dead_matter": 0, "burnt_soil": 0}
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell = self.grid[r][c]
+                if cell["plant"]:
+                    p_name = cell["plant"]["name"]
+                    plant_counts[p_name] = plant_counts.get(p_name, 0) + 1
+                if cell["dead_matter"]:
+                    feature_counts["dead_matter"] += 1
+                if cell["soil"] == 3:
+                    feature_counts["burnt_soil"] += 1
+
+        for item in self.unlock_conditions:
+            pname = item["plant"]
+            if pname not in self.unlocked_plants:
+                if self.eval_unlock_node(item["unlock"], plant_counts, feature_counts):
+                    self.unlocked_plants.add(pname)
+
     def run_simulation(self, solution_actions):
         actions_by_tick = {}
         for entry in solution_actions.get("actions", []):
@@ -97,7 +179,7 @@ class PhotospheriaSimulator:
         for tick in range(self.max_ticks):
             self.current_tick = tick
 
-            # 1. Season update
+            # 1. Season update & Events
             if tick in self.seasons_by_tick:
                 self.current_season = self.seasons_by_tick[tick]
 
@@ -109,6 +191,9 @@ class PhotospheriaSimulator:
                 if 0 <= r < self.rows and 0 <= c < self.cols:
                     cell = self.grid[r][c]
                     p_info = self.plants_by_index.get(p_idx)
+                    # Cannot plant if not unlocked! (PDF Page 3: Any attempt before unlock is ignored)
+                    if p_info and p_info["plant"] not in self.unlocked_plants:
+                        continue
                     # Can only be placed in soil (terrain == 0 and soil in preferred_soil)
                     if p_info and cell["terrain"] == 0 and cell["soil"] in p_info["preferred_soil"]:
                         cell["plant"] = {
@@ -220,6 +305,9 @@ class PhotospheriaSimulator:
                 for c in range(self.cols):
                     if self.grid[r][c]["plant"]:
                         self.grid[r][c]["plant"]["age"] += 1
+
+            # 8. Update unlock condition trees
+            self.update_unlocks()
 
         return self.evaluate_score()
 
