@@ -1,6 +1,6 @@
 """
 Entelect Hack<IT> 2026 - Root Cause Analysis
-Universal Deterministic Solver (Level 1, Level 2 & Level 3)
+Universal Deterministic Solver (Level 1, Level 2, Level 3 & Level 4)
 """
 
 import json
@@ -11,8 +11,9 @@ import argparse
 from solve_level1 import generate_level1_solution
 from solve_level2 import generate_level2_actions
 from solve_level3 import generate_level3_actions
+from solve_level4 import generate_level4_actions
 
-def solve(level=3):
+def solve(level=4):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     os.makedirs(os.path.join(base_dir, "solutions"), exist_ok=True)
 
@@ -24,10 +25,14 @@ def solve(level=3):
         print("Solving Level 2 (Garden Growth Study)...")
         sol = generate_level2_actions()
         out_level = os.path.join(base_dir, "solutions", "level2_solution.json")
-    else:
+    elif level == 3:
         print("Solving Level 3 (Park Potential Study)...")
         sol = generate_level3_actions()
         out_level = os.path.join(base_dir, "solutions", "level3_solution.json")
+    else:
+        print("Solving Level 4 (Wild Planet Study)...")
+        sol = generate_level4_actions()
+        out_level = os.path.join(base_dir, "solutions", "level4_solution.json")
 
     out_main = os.path.join(base_dir, "solution.json")
 
@@ -41,7 +46,7 @@ def solve(level=3):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entelect Root Cause Analysis Solver")
-    parser.add_argument("--level", type=int, default=3, choices=[1, 2, 3], help="Level to solve (default: 3)")
+    parser.add_argument("--level", type=int, default=4, choices=[1, 2, 3, 4], help="Level to solve (default: 4)")
     args = parser.parse_args()
 
     solve(level=args.level)
