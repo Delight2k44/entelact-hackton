@@ -11,6 +11,8 @@ os.makedirs(dest_dir, exist_ok=True)
 files_to_zip = [
     ("main.py", "main.py"),
     ("solve.py", "solve.py"),
+    ("solve_level1.py", "solve_level1.py"),
+    ("solve_level2.py", "solve_level2.py"),
     ("simulator.py", "simulator.py"),
     ("README.md", "README.md"),
 ]
@@ -30,12 +32,19 @@ with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
 
 print(f"Created {zip_path} (size: {os.path.getsize(zip_path)} bytes)")
 
-# Copy code.zip and solution.json to desktop submission folder
+# Copy code.zip, solution.json, and level-specific solutions to desktop submission folder
 dest_zip = os.path.join(dest_dir, "code.zip")
 dest_sol = os.path.join(dest_dir, "solution.json")
+dest_l1 = os.path.join(dest_dir, "level1_solution.json")
+dest_l2 = os.path.join(dest_dir, "level2_solution.json")
+
 shutil.copy2(zip_path, dest_zip)
 shutil.copy2(os.path.join(base_dir, "solution.json"), dest_sol)
+shutil.copy2(os.path.join(base_dir, "solutions", "level1_solution.json"), dest_l1)
+shutil.copy2(os.path.join(base_dir, "solutions", "level2_solution.json"), dest_l2)
 
-print(f"Successfully copied to {dest_dir}:")
+print(f"\nSuccessfully copied to {dest_dir}:")
 print(f"  - code.zip ({os.path.getsize(dest_zip)} bytes)")
 print(f"  - solution.json ({os.path.getsize(dest_sol)} bytes)")
+print(f"  - level1_solution.json ({os.path.getsize(dest_l1)} bytes)")
+print(f"  - level2_solution.json ({os.path.getsize(dest_l2)} bytes)")
