@@ -13,6 +13,7 @@ files_to_zip = [
     ("solve.py", "solve.py"),
     ("solve_level1.py", "solve_level1.py"),
     ("solve_level2.py", "solve_level2.py"),
+    ("solve_level3.py", "solve_level3.py"),
     ("simulator.py", "simulator.py"),
     ("README.md", "README.md"),
 ]
@@ -37,14 +38,17 @@ dest_zip = os.path.join(dest_dir, "code.zip")
 dest_sol = os.path.join(dest_dir, "solution.json")
 dest_l1 = os.path.join(dest_dir, "level1_solution.json")
 dest_l2 = os.path.join(dest_dir, "level2_solution.json")
+dest_l3 = os.path.join(dest_dir, "level3_solution.json")
 
 shutil.copy2(zip_path, dest_zip)
 shutil.copy2(os.path.join(base_dir, "solution.json"), dest_sol)
 shutil.copy2(os.path.join(base_dir, "solutions", "level1_solution.json"), dest_l1)
 shutil.copy2(os.path.join(base_dir, "solutions", "level2_solution.json"), dest_l2)
+shutil.copy2(os.path.join(base_dir, "solutions", "level3_solution.json"), dest_l3)
 
 print(f"\nSuccessfully copied to {dest_dir}:")
 print(f"  - code.zip ({os.path.getsize(dest_zip)} bytes)")
 print(f"  - solution.json ({os.path.getsize(dest_sol)} bytes)")
 print(f"  - level1_solution.json ({os.path.getsize(dest_l1)} bytes)")
 print(f"  - level2_solution.json ({os.path.getsize(dest_l2)} bytes)")
+print(f"  - level3_solution.json ({os.path.getsize(dest_l3)} bytes)")
